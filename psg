@@ -1,0 +1,19 @@
+#!/bin/sh
+#
+# convenience, grep ps output
+#
+SYSTEM=`uname`
+EGREP="/usr/bin/egrep"
+PSARGS=""
+PSARGPREFIX="-"
+
+case "$SYSTEM" in
+  *Linux*)    PSARGS="efw" ;;
+  *Solaris*)  PSARGS="ef"  ;;
+  *Darwin*)   PSARGS="ej"  ;;
+  *BSD*)      PSARGS="ej"  ;;
+  *)          PSARGS="ef"  ;;
+esac
+
+ps $PSARGPREFIX$PSARGS | (read HEADER; echo "$HEADER"; $EGREP -v "[ /]psg | egrep " | $EGREP $*)
+

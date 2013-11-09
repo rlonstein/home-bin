@@ -1,0 +1,11 @@
+#!/bin/sh
+#
+# Print digests as used by macports
+#
+OPENSSL=/usr/bin/openssl
+
+for f in $*; do
+    $OPENSSL dgst -md5 $f    | awk '{print "md5   ",$2}'
+    $OPENSSL dgst -sha1 $f   | awk '{print "sha1  ",$2}'
+    $OPENSSL dgst -rmd160 $f | awk '{print "rmd160",$2}'
+done

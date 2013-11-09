@@ -1,0 +1,116 @@
+#!/bin/bash
+#
+# Authenticate to the Halcyon Condo captured portal
+# now with added useless features for the terminally
+# curious and documentation.
+#
+# blame ross.lonstein@morganstanley.com
+#
+
+function usage() {
+  echo "Usage: $0 [-c <cfg>] [-f] [-s] [-v]"
+  echo "  -c  use config file <cfg>, defaults $HOME/etc/halcyon.cfg"
+  echo "  -f  fail normally, default curl fails silently on server error"
+  echo "  -s  secure cert, default skip cert verification"
+  echo "  -v  verbose"
+  exit 1;
+}
+
+#
+# Config file expected to contain one line with colon-separated
+# tuple consisting of:
+#  <USERID>:<PASSWORD>:<INTERFACE>
+# ex.
+#  condo123:not4u2know:en1
+#
+CFG=$HOME/etc/halcyon.cfg
+
+FAIL=-f
+VERBOSE=""
+INSECURE="-k";
+
+args=`getopt hfsvc: $*`
+if [ $? != 0 ]; then
+  usage;
+fi
+
+set -- $args
+
+for i; do
+  case "$i"
+    in
+      -h)
+        usage
+        ;;
+      -c)
+        CFG=$2; shift;
+        shift;;
+      -f)
+        FAIL="";
+        shift;;
+      -s)
+        #
+        # Don't do this, really. The cert on the 
+        # aruba captured portal is slightly broken 
+        # and while your browser might let you
+        # proceed, curl will fail. Maybe it's my
+        # certfile but it warns in Firefox too
+        #
+        INSECURE="";
+        shift;;
+      -v)
+        VERBOSE=-v;
+        shift;;
+      --)
+        shift; break;;
+  esac
+done
+
+if [ ! -z $VERBOSE ]; then
+  echo "Reading [$CFG]"
+fi
+
+if [ ! -r $CFG ]; then
+  echo "Failed to read [$CFG]"
+  exit 1
+fi
+
+OLDIFS=$IFS
+IFS=":"
+read USERID PASSWORD IFACE < $CFG
+IFS=$OLDIFS
+
+MAC=`ifconfig $IFACE | awk '/ether /{ print $2 }'`
+IP=`ifconfig $IFACE | awk '/inet /{ print $2 }'`
+
+if [ ! -z $VERBOSE ]; then
+  echo "Attempting authentication with:"
+  echo "  Userid/Pasword [$USERID/$PASSWORD]"
+  echo "  Interface      [$IFACE]"
+  echo "  MAC            [$MAC]"
+  echo "  IP             [$IP]"
+  if [ -z $INSECURE ]; then
+    echo "  will *not* use insecure cert mode."
+  else
+    echo "  will use insecure cert mode."
+  fi
+  echo
+fi
+
+#
+# If you don't have/use/like "curl" the same thing might be done
+# (I haven't tried) with a little extra effort using 
+# "lynx --post_data" or "w3m -post" to post by stuffing 
+# the fully assembled form parameters into a file. YMMV.
+# Reimplementation in perl or python left as an exercise
+# for the reader.
+#
+curl -S $INSECURE $FAIL $VERBOSE \
+ -F "id=regform" \
+ -F "mac=$MAC" \
+ -F "ip=$IP" \
+ -F "essid=Guest" \
+ -F "user=$USERID" \
+ -F "password=$PASSWORD" \
+ -F "Cmd=authenticate" \
+ https://securelogin.arubanetworks.com/cgi-bin/login

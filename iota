@@ -1,0 +1,11 @@
+#!/opt/local/bin/sbcl --noinform
+;;
+;; iota <count> [start} [step]
+;;
+;; generate <count> numbers (not just integers) from <start>
+;; advancing by <step>
+;;
+(destructuring-bind (count &optional (start 0) (step 1))
+    (mapcar #'read-from-string (cddr sb-ext:*posix-argv*))
+  (loop repeat count for i from start by step do (format t " ~S" i)))
+

@@ -1,0 +1,7 @@
+#!/opt/local/bin/sbcl --noinform
+
+(format t "~16<dec~>~12<hex~>~8<oct~>~8<bin~>~%")
+
+(loop :for i :in (cddr sb-ext:*posix-argv*)
+      :do (format t "~16:D ~2,8@T~:*0x~X ~2,8@T~:*0~O ~2,8@T~:*~32,'0,' ,B~%"
+                    (parse-integer i)))
